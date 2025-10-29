@@ -1,0 +1,198 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Deep purple background like reference */
+    --background: 270 50% 20%;
+    --foreground: 0 0% 100%;
+
+    --card: 270 60% 25%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 270 60% 20%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 280 100% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 320 100% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 270 40% 30%;
+    --muted-foreground: 280 20% 80%;
+
+    --accent: 45 100% 55%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 0%;
+    --input: 270 40% 20%;
+    --ring: 280 100% 65%;
+
+    --radius: 1.5rem;
+
+    /* Exact colors from reference */
+    --purple-bg: 270 55% 35%;
+    --purple-dark: 270 60% 25%;
+    --pink-hot: 330 100% 55%;
+    --pink-bright: 320 100% 60%;
+    --yellow-electric: 45 100% 55%;
+    --orange-spray: 25 100% 50%;
+    --cyan-pop: 180 100% 45%;
+    --purple-bright: 270 80% 55%;
+    
+    /* Card Gradients - matching reference exactly */
+    --gradient-hook: linear-gradient(135deg, #FF006B 0%, #FFAA00 100%);
+    --gradient-loop: linear-gradient(135deg, #7B2FFF 0%, #B24AFF 100%);
+    --gradient-audio: linear-gradient(135deg, #FFAA00 0%, #FF6B00 100%);
+    --gradient-sop: linear-gradient(135deg, #6B2FFF 0%, #9B4AFF 100%);
+    --gradient-logo: linear-gradient(135deg, #7B2FFF 0%, #FF006B 100%);
+    
+    --sidebar-background: 270 50% 20%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 280 100% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 40% 25%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 0%;
+    --sidebar-ring: 280 100% 65%;
+  }
+}
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Rubik', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Titan One', cursive;
+    text-transform: uppercase;
+  }
+}
+
+@layer utilities {
+  .text-graffiti {
+    font-family: 'Titan One', cursive;
+    text-transform: uppercase;
+    -webkit-text-stroke: 2px black;
+    text-stroke: 2px black;
+  }
+
+  .text-comic {
+    font-family: 'Bangers', cursive;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* Exact gradients from reference */
+  .gradient-hook {
+    background: linear-gradient(135deg, #FF006B 0%, #FFAA00 100%);
+  }
+
+  .gradient-loop {
+    background: linear-gradient(135deg, #7B2FFF 0%, #B24AFF 100%);
+  }
+
+  .gradient-audio {
+    background: linear-gradient(135deg, #FFAA00 0%, #FF6B00 100%);
+  }
+
+  .gradient-sop {
+    background: linear-gradient(135deg, #6B2FFF 0%, #9B4AFF 100%);
+  }
+
+  .gradient-logo {
+    background: linear-gradient(135deg, #7B2FFF 0%, #FF006B 100%);
+  }
+
+  /* Thick comic-style borders */
+  .border-comic {
+    border: 4px solid #000;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+  }
+
+  .border-comic-thick {
+    border: 6px solid #000;
+    box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Splatter decorations */
+  .splatter-orange {
+    position: relative;
+  }
+  
+  .splatter-orange::before {
+    content: '';
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: #FF6B00;
+    border-radius: 50% 40% 60% 50%;
+    opacity: 0.3;
+    top: -10px;
+    right: -10px;
+    z-index: -1;
+  }
+
+  .splatter-pink {
+    position: relative;
+  }
+  
+  .splatter-pink::after {
+    content: '';
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: #FF006B;
+    border-radius: 60% 40% 50% 60%;
+    opacity: 0.3;
+    bottom: -15px;
+    left: -15px;
+    z-index: -1;
+  }
+
+  .splatter-cyan {
+    position: relative;
+  }
+  
+  .splatter-cyan::before {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: #00D9FF;
+    border-radius: 40% 60% 50% 40%;
+    opacity: 0.3;
+    top: 10px;
+    left: -20px;
+    z-index: -1;
+  }
+
+  /* Text outline effect */
+  .text-outline-black {
+    -webkit-text-stroke: 3px black;
+    text-stroke: 3px black;
+    paint-order: stroke fill;
+  }
+
+  .text-outline-black-thin {
+    -webkit-text-stroke: 2px black;
+    text-stroke: 2px black;
+    paint-order: stroke fill;
+  }
+}

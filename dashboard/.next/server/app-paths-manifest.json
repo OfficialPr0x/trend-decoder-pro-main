@@ -1,0 +1,7 @@
+{
+  "/dashboard/top-10s/page": "app/dashboard/top-10s/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/video-generator/page": "app/dashboard/video-generator/page.js",
+  "/dashboard/library/page": "app/dashboard/library/page.js"
+}

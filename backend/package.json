@@ -1,0 +1,25 @@
+{
+  "name": "viralify-backend",
+  "version": "1.0.0",
+  "description": "VIRALIFY TikTok Analysis Backend with RapidAPI",
+  "type": "module",
+  "main": "server-openrouter.js",
+  "scripts": {
+    "start": "node server-openrouter.js",
+    "dev": "nodemon server-openrouter.js",
+    "setup": "npm install",
+    "kill-port": "npx kill-port 3001"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2",
+    "openai": "^6.7.0",
+    "sharp": "^0.33.3",
+    "puppeteer": "^22.6.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

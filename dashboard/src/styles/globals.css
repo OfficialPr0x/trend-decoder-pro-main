@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 260 60% 8%;
+    --foreground: 0 0% 100%;
+    --card: 260 50% 12%;
+    --card-foreground: 0 0% 100%;
+    --popover: 260 50% 12%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 280 100% 70%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 260 40% 20%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 260 40% 20%;
+    --muted-foreground: 260 20% 70%;
+    --accent: 320 100% 70%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 260 50% 20%;
+    --input: 260 50% 15%;
+    --ring: 280 100% 70%;
+    --radius: 1rem;
+    --chart-1: 280 100% 70%;
+    --chart-2: 190 100% 50%;
+    --chart-3: 340 100% 70%;
+    --chart-4: 160 100% 50%;
+    --chart-5: 30 100% 60%;
+  }
+
+  .dark {
+    --background: 260 60% 8%;
+    --foreground: 0 0% 100%;
+    --card: 260 50% 12%;
+    --card-foreground: 0 0% 100%;
+    --popover: 260 50% 12%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 280 100% 70%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 260 40% 20%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 260 40% 20%;
+    --muted-foreground: 260 20% 70%;
+    --accent: 320 100% 70%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 260 50% 20%;
+    --input: 260 50% 15%;
+    --ring: 280 100% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 25%, #1a0b2e 50%, #2d1b4e 75%, #1a0b2e 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+  }
+  
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}
+
+@layer components {
+  .gradient-card {
+    @apply relative overflow-hidden;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.15) 50%, rgba(59, 130, 246, 0.15) 100%);
+  }
+  
+  .gradient-card::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(236, 72, 153, 0.25) 50%, rgba(59, 130, 246, 0.25) 100%);
+  }
+  
+  .gradient-card:hover::before {
+    @apply opacity-100;
+  }
+  
+  .vibey-gradient {
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #06b6d4 100%);
+  }
+  
+  .vibey-button {
+    background: linear-gradient(135deg, #f43f5e 0%, #f97316 100%);
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.5);
+  }
+  
+  .vibey-button:hover {
+    background: linear-gradient(135deg, #f97316 0%, #f43f5e 100%);
+    box-shadow: 0 0 30px rgba(244, 63, 94, 0.7);
+  }
+  
+  .glass-effect {
+    @apply backdrop-blur-xl bg-white/5 border border-white/10;
+  }
+  
+  .shine-effect {
+    @apply relative overflow-hidden;
+  }
+  
+  .shine-effect::after {
+    content: '';
+    @apply absolute top-0 -left-full h-full w-1/2 transform skew-x-12;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: shine 3s infinite;
+  }
+  
+  @keyframes shine {
+    0% {
+      left: -100%;
+    }
+    20%, 100% {
+      left: 100%;
+    }
+  }
+  
+  .glow-text {
+    text-shadow: 0 0 20px rgba(168, 85, 247, 0.5),
+                 0 0 40px rgba(168, 85, 247, 0.3);
+  }
+}
+

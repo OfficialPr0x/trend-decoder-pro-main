@@ -1,0 +1,304 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { AnalysisCard } from "@/components/AnalysisCard";
+import { Zap, Volume2, Download, Link, Sparkles, Target, TrendingUp } from "lucide-react";
+import { analyzeTikTok } from "@/services/openrouter-api";
+import { useToast } from "@/hooks/use-toast";
+import { GhostLoader } from "@/components/GhostLoader";
+
+interface AnalyzeTabProps {
+  currentUrl: string;
+  onExtractUrl: () => void;
+}
+
+export const AnalyzeTab = ({ currentUrl, onExtractUrl }: AnalyzeTabProps) => {
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStatus, setAnalysisStatus] = useState('');
+  const [analysisData, setAnalysisData] = useState<any | null>(null);
+  const { toast } = useToast();
+
+  const handleAnalyze = async () => {
+    if (!currentUrl || !currentUrl.includes('tiktok.com')) {
+      toast({
+        title: "⚠️ Invalid URL",
+        description: "Please extract a TikTok URL first",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisProgress(0);
+    setAnalysisStatus('Starting analysis...');
+    setAnalysisData(null);
+    
+    try {
+      console.log('VIRALIFY: Analyzing TikTok URL:', currentUrl);
+      
+      const result = await analyzeTikTok({
+        url: currentUrl,
+        onProgress: (progress, status) => {
+          console.log('VIRALIFY: Analysis progress:', progress, status);
+          setAnalysisProgress(progress);
+          setAnalysisStatus(status);
+        }
+      });
+      
+      console.log('VIRALIFY: Analysis complete:', result);
+      setAnalysisData(result.analysis);
+      setIsAnalyzing(false);
+      setAnalysisProgress(100);
+      setAnalysisStatus('Complete!');
+      
+      toast({
+        title: "✨ Analysis Complete! 🎯",
+        description: `Engagement Score: ${result.analysis.engagementScore}/100`,
+        duration: 3000,
+      });
+    } catch (error) {
+      setIsAnalyzing(false);
+      setAnalysisProgress(0);
+      setAnalysisStatus('Failed');
+      console.error('Analysis failed:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast({
+        title: "❌ Analysis Failed",
+        description: errorMessage.includes('API key') 
+          ? 'Add your OpenRouter API key in Settings'
+          : errorMessage.includes('3001')
+          ? 'Backend not running. Start it with: npm run start (in backend folder)'
+          : errorMessage,
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Extract URL Button */}
+      <Button
+        onClick={onExtractUrl}
+        className="w-full h-12 text-lg font-black uppercase tracking-wide bg-gradient-to-r from-[#7B2FFF] to-[#B24AFF] hover:opacity-95 transition-all duration-300 text-white rounded-2xl"
+        style={{
+          fontFamily: "'Rubik', sans-serif",
+          WebkitTextStroke: "1px black",
+          textStroke: "1px black",
+          paintOrder: "stroke fill",
+          border: "3px solid black",
+          boxShadow: "3px 3px 0px rgba(0, 0, 0, 0.3)",
+        }}
+      >
+        <Link className="w-5 h-5 mr-2" strokeWidth={3} />
+        Extract URL
+      </Button>
+
+      {/* Current URL Display */}
+      {currentUrl && (
+        <div className="bg-white/90 rounded-xl p-3"
+             style={{
+               border: "3px solid black",
+               boxShadow: "3px 3px 0px rgba(0, 0, 0, 0.3)",
+             }}>
+          <p className="text-xs font-bold text-black mb-1">Current Video:</p>
+          <p className="text-xs text-gray-700 truncate">{currentUrl}</p>
+        </div>
+      )}
+
+      {/* Analyze Button */}
+      {currentUrl && currentUrl.includes('tiktok.com') && !isAnalyzing && (
+        <Button
+          onClick={handleAnalyze}
+          disabled={isAnalyzing}
+          className="w-full h-14 text-xl font-black uppercase tracking-wide bg-gradient-to-r from-[#FF006B] to-[#FFAA00] hover:opacity-95 transition-all duration-300 text-white rounded-2xl"
+          style={{
+            fontFamily: "'Rubik', sans-serif",
+            WebkitTextStroke: "2px black",
+            textStroke: "2px black",
+            paintOrder: "stroke fill",
+            border: "3px solid black",
+            boxShadow: "3px 3px 0px rgba(0, 0, 0, 0.3)",
+          }}
+        >
+          <Sparkles className="w-5 h-5 mr-2" />
+          Analyze Video
+        </Button>
+      )}
+
+      {/* Analysis Progress */}
+      {isAnalyzing && (
+        <Card 
+          className="p-6 bg-gradient-to-br from-pink-900/90 to-purple-900/90 backdrop-blur-sm"
+          style={{ border: "3px solid black" }}
+        >
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <GhostLoader progress={Math.round(analysisProgress)} />
+            <div className="text-center space-y-2">
+              <div className="text-white font-black text-2xl">
+                {Math.round(analysisProgress)}%
+              </div>
+              <div className="text-white/80 font-medium text-sm">
+                {analysisStatus}
+              </div>
+              <div className="w-64 h-2 bg-black/30 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-300"
+                  style={{ width: `${analysisProgress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Analysis Results */}
+      {!isAnalyzing && analysisData && (
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {/* Engagement Score */}
+          <Card 
+            className="p-4 bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm"
+            style={{ border: "3px solid black" }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-emerald-300" />
+                <span className="text-white font-black uppercase text-sm">Engagement Score</span>
+              </div>
+              <div className="text-3xl font-black text-white">
+                {analysisData.engagementScore}/100
+              </div>
+            </div>
+            <div className="mt-2 h-2 bg-black/30 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-500"
+                style={{ width: `${analysisData.engagementScore}%` }}
+              />
+            </div>
+          </Card>
+
+          {/* Content Type */}
+          <AnalysisCard
+            icon={<Sparkles className="w-5 h-5 text-cyan-300" strokeWidth={3} />}
+            title="CONTENT TYPE"
+            description={analysisData.contentType || "Unknown"}
+            gradient="hook"
+          />
+
+          {/* Viral Hooks */}
+          <Card 
+            className="p-4 bg-gradient-to-br from-pink-500/20 to-purple-500/20 backdrop-blur-sm"
+            style={{ border: "3px solid black" }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="w-5 h-5 text-pink-300" />
+              <span className="text-white font-black uppercase text-sm">Viral Hooks</span>
+            </div>
+            <ul className="space-y-1">
+              {analysisData.viralHooks?.map((hook: string, i: number) => (
+                <li key={i} className="text-white/90 font-medium text-sm flex items-start gap-2">
+                  <span className="text-pink-300 font-black">•</span>
+                  {hook}
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          {/* Trending Elements */}
+          <Card 
+            className="p-4 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm"
+            style={{ border: "3px solid black" }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-5 h-5 text-yellow-300" />
+              <span className="text-white font-black uppercase text-sm">Trending Elements</span>
+            </div>
+            <ul className="space-y-1">
+              {analysisData.trendingElements?.map((element: string, i: number) => (
+                <li key={i} className="text-white/90 font-medium text-sm flex items-start gap-2">
+                  <span className="text-yellow-300 font-black">•</span>
+                  {element}
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          {/* Recommendations */}
+          <Card 
+            className="p-4 bg-gradient-to-br from-purple-500/20 to-indigo-500/20 backdrop-blur-sm"
+            style={{ border: "3px solid black" }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Download className="w-5 h-5 text-purple-300" />
+              <span className="text-white font-black uppercase text-sm">Recommendations</span>
+            </div>
+            <ul className="space-y-2">
+              {analysisData.recommendations?.map((rec: string, i: number) => (
+                <li key={i} className="text-white/90 font-medium text-sm flex items-start gap-2">
+                  <span className="text-purple-300 font-black">{i + 1}.</span>
+                  {rec}
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          {/* Raw Analysis (if available) */}
+          {analysisData.rawAnalysis && (
+            <Card 
+              className="p-4 bg-black/50 backdrop-blur-sm"
+              style={{ border: "3px solid black" }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-white/70" />
+                <span className="text-white font-black uppercase text-xs">Full Analysis</span>
+              </div>
+              <p className="text-white/70 font-medium text-xs whitespace-pre-wrap">
+                {analysisData.rawAnalysis}
+              </p>
+            </Card>
+          )}
+          
+          {/* Remix Button */}
+          <Button
+            className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl"
+            style={{
+              border: "3px solid black",
+              boxShadow: "3px 3px 0px rgba(0, 0, 0, 0.3)",
+            }}
+            onClick={() => {
+              // Switch to create tab with pre-filled data
+              window.dispatchEvent(new CustomEvent('remix-content', { 
+                detail: { metadata: analysisData, url: currentUrl }
+              }));
+              toast({
+                title: "🎨 Remix Started!",
+                description: "Check the Create tab",
+                duration: 3000,
+              });
+            }}
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Remix This Content
+          </Button>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!currentUrl && !analysisData && !isAnalyzing && (
+        <div className="text-center py-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm mb-3"
+               style={{ border: "3px solid black" }}>
+            <Zap className="w-7 h-7 text-yellow-400" />
+          </div>
+          <p className="text-white font-bold text-sm mb-2"
+             style={{ textShadow: "2px 2px 0px rgba(0,0,0,0.5)" }}>
+            Click "Extract URL" to start
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
