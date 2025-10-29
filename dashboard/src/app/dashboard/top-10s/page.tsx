@@ -20,25 +20,89 @@ import {
   MessageCircle,
   Share2,
   ArrowUpRight,
-  RefreshCcw
+  RefreshCcw,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { formatNumber, formatDate } from '@/lib/utils';
+import {
+  getTrendingVideos,
+  getTrendingCreators,
+  getTrendingHashtags,
+  getTrendingSongs,
+  getTrendingKeywords,
+  getTrendingProducts,
+  getTrendingAds,
+  type TrendingVideo,
+  type TrendingCreator,
+  type TrendingHashtag
+} from '@/lib/api';
 
 export default function Top10sPage() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('US');
   const [selectedPeriod, setSelectedPeriod] = useState(7);
+  
+  // Data states
+  const [videos, setVideos] = useState<any[]>([]);
+  const [creators, setCreators] = useState<any[]>([]);
+  const [hashtags, setHashtags] = useState<any[]>([]);
+  const [songs, setSongs] = useState<any[]>([]);
+  const [keywords, setKeywords] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [ads, setAds] = useState<any[]>([]);
 
-  const handleRefresh = async () => {
+  // Fetch all trending data
+  const fetchTrendingData = async () => {
     setLoading(true);
-    // TODO: Fetch from backend API
-    setTimeout(() => setLoading(false), 1000);
+    setError(null);
+    
+    try {
+      const [videosData, creatorsData, hashtagsData, songsData, keywordsData, productsData, adsData] = await Promise.all([
+        getTrendingVideos(1, 10, selectedPeriod, selectedCountry).catch(() => ({ data: [] })),
+        getTrendingCreators(1, 10, selectedCountry).catch(() => ({ data: [] })),
+        getTrendingHashtags(1, 10, selectedPeriod, selectedCountry).catch(() => ({ data: [] })),
+        getTrendingSongs(1, 10, selectedPeriod, selectedCountry).catch(() => ({ data: [] })),
+        getTrendingKeywords(1, 10, selectedPeriod, selectedCountry).catch(() => ({ data: [] })),
+        getTrendingProducts(1, selectedPeriod).catch(() => ({ data: [] })),
+        getTrendingAds(1, selectedPeriod, 10, selectedCountry).catch(() => ({ data: [] })),
+      ]);
+      
+      setVideos(videosData.data || []);
+      setCreators(creatorsData.data || []);
+      setHashtags(hashtagsData.data || []);
+      setSongs(songsData.data || []);
+      setKeywords(keywordsData.data || []);
+      setProducts(productsData.data || []);
+      setAds(adsData.data || []);
+    } catch (err: any) {
+      console.error('Failed to fetch trending data:', err);
+      setError(err.message || 'Failed to load trending data');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchTrendingData();
+  }, [selectedCountry, selectedPeriod]);
+  
+  const handleRefresh = () => {
+    fetchTrendingData();
   };
 
   const handleExport = () => {
     // TODO: Implement CSV export
-    console.log('Exporting data...');
+    const dataToExport = { videos, creators, hashtags, songs, keywords, products, ads };
+    const json = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tiktok-trending-${selectedCountry}-${Date.now()}.json`;
+    a.click();
   };
 
   return (
@@ -137,37 +201,37 @@ export default function Top10sPage() {
 
         {/* Trending Videos */}
         <TabsContent value="videos" className="space-y-4">
-          <TrendingVideosTable />
+          <TrendingVideosTable videos={videos} loading={loading} />
         </TabsContent>
 
         {/* Trending Creators */}
         <TabsContent value="creators" className="space-y-4">
-          <TrendingCreatorsTable />
+          <TrendingCreatorsTable creators={creators} loading={loading} />
         </TabsContent>
 
         {/* Trending Hashtags */}
         <TabsContent value="hashtags" className="space-y-4">
-          <TrendingHashtagsTable />
+          <TrendingHashtagsTable hashtags={hashtags} loading={loading} />
         </TabsContent>
 
         {/* Trending Songs */}
         <TabsContent value="songs" className="space-y-4">
-          <TrendingSongsTable />
+          <TrendingSongsTable songs={songs} loading={loading} />
         </TabsContent>
 
         {/* Trending Keywords */}
         <TabsContent value="keywords" className="space-y-4">
-          <TrendingKeywordsTable />
+          <TrendingKeywordsTable keywords={keywords} loading={loading} />
         </TabsContent>
 
         {/* Top Products */}
         <TabsContent value="products" className="space-y-4">
-          <TrendingProductsTable />
+          <TrendingProductsTable products={products} loading={loading} />
         </TabsContent>
 
         {/* Trending Ads */}
         <TabsContent value="ads" className="space-y-4">
-          <TrendingAdsTable />
+          <TrendingAdsTable ads={ads} loading={loading} />
         </TabsContent>
       </Tabs>
     </div>
@@ -175,32 +239,27 @@ export default function Top10sPage() {
 }
 
 // Trending Videos Component
-function TrendingVideosTable() {
-  const mockVideos = [
-    {
-      rank: 1,
-      creator: '@viralcontent',
-      description: 'This trend is EXPLODING right now 🔥',
-      views: 12500000,
-      likes: 2100000,
-      comments: 85000,
-      shares: 420000,
-      engagementRate: 20.8,
-      growth: 458,
-    },
-    {
-      rank: 2,
-      creator: '@trendmaster',
-      description: 'You won\'t believe this hack...',
-      views: 9800000,
-      likes: 1600000,
-      comments: 72000,
-      shares: 350000,
-      engagementRate: 20.6,
-      growth: 392,
-    },
-    // Add more mock data...
-  ];
+function TrendingVideosTable({ videos, loading }: { videos: any[], loading: boolean }) {
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-[#A855F7]" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!videos || videos.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <AlertCircle className="h-12 w-12 text-gray-500 mb-4" />
+          <p className="text-gray-400">No trending videos available</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -210,59 +269,65 @@ function TrendingVideosTable() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {mockVideos.map((video) => (
-            <div
-              key={video.rank}
-              className="flex items-center gap-4 rounded-lg border p-4 hover:bg-accent transition-colors"
-            >
-              <div className={`flex h-10 w-10 items-center justify-center rounded-full font-black text-white shadow-lg ${
-                video.rank === 1 ? 'bg-gradient-to-br from-[#FFB800] to-[#F97316] shadow-[#FFB800]/40' :
-                video.rank === 2 ? 'bg-gradient-to-br from-[#A855F7] to-[#7C3AED] shadow-[#A855F7]/40' :
-                'bg-gradient-to-br from-[#00D9FF] to-[#0099CC] shadow-[#00D9FF]/30'
-              }`}>
-                #{video.rank}
-              </div>
-              <div className="flex-1">
-                <div className="font-medium">{video.creator}</div>
-                <div className="text-sm text-muted-foreground">{video.description}</div>
-                <div className="mt-2 flex items-center gap-4 text-sm">
-                  <span className="flex items-center gap-1">
-                    <Eye className="h-3 w-3" />
-                    {formatNumber(video.views)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Heart className="h-3 w-3" />
-                    {formatNumber(video.likes)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MessageCircle className="h-3 w-3" />
-                    {formatNumber(video.comments)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Share2 className="h-3 w-3" />
-                    {formatNumber(video.shares)}
-                  </span>
+          {videos.map((video, index) => {
+            const rank = index + 1;
+            const stats = video.stats || {};
+            const author = video.author || {};
+            const engagementRate = stats.play_count > 0 
+              ? (((stats.digg_count || 0) + (stats.comment_count || 0) + (stats.share_count || 0)) / stats.play_count * 100).toFixed(1)
+              : 0;
+            
+            return (
+              <div
+                key={video.video_id || index}
+                className="flex items-center gap-4 rounded-lg border p-4 hover:bg-accent transition-colors"
+              >
+                <div className={`flex h-10 w-10 items-center justify-center rounded-full font-black text-white shadow-lg ${
+                  rank === 1 ? 'bg-gradient-to-br from-[#FFB800] to-[#F97316] shadow-[#FFB800]/40' :
+                  rank === 2 ? 'bg-gradient-to-br from-[#A855F7] to-[#7C3AED] shadow-[#A855F7]/40' :
+                  'bg-gradient-to-br from-[#00D9FF] to-[#0099CC] shadow-[#00D9FF]/30'
+                }`}>
+                  #{rank}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">@{author.unique_id || 'Unknown'}</div>
+                  <div className="text-sm text-muted-foreground line-clamp-2">{video.desc || 'No description'}</div>
+                  <div className="mt-2 flex items-center gap-4 text-sm">
+                    <span className="flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      {formatNumber(stats.play_count || 0)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Heart className="h-3 w-3" />
+                      {formatNumber(stats.digg_count || 0)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessageCircle className="h-3 w-3" />
+                      {formatNumber(stats.comment_count || 0)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Share2 className="h-3 w-3" />
+                      {formatNumber(stats.share_count || 0)}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium">Engagement</div>
+                  <div className="text-2xl font-bold text-primary">{engagementRate}%</div>
+                  <Badge variant="secondary" className="mt-1">
+                    <TrendingUp className="mr-1 h-3 w-3" />
+                    Viral
+                  </Badge>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" className="bg-gradient-to-r from-[#00D9FF] to-[#0099CC] hover:from-[#0099CC] hover:to-[#00D9FF] font-bold shadow-md shadow-[#00D9FF]/30">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Analyze
+                  </Button>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-sm font-medium">Engagement</div>
-                <div className="text-2xl font-bold text-primary">{video.engagementRate}%</div>
-                <Badge variant="secondary" className="mt-1">
-                  <TrendingUp className="mr-1 h-3 w-3" />
-                  +{video.growth}%
-                </Badge>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" className="bg-gradient-to-r from-[#00D9FF] to-[#0099CC] hover:from-[#0099CC] hover:to-[#00D9FF] font-bold shadow-md shadow-[#00D9FF]/30">
-                  <Eye className="mr-2 h-4 w-4" />
-                  Analyze
-                </Button>
-                <Button size="sm" className="bg-gradient-to-r from-[#A855F7] to-[#7C3AED] hover:from-[#7C3AED] hover:to-[#A855F7] font-bold shadow-md shadow-[#A855F7]/30">
-                  Send to Generator
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
@@ -270,21 +335,27 @@ function TrendingVideosTable() {
 }
 
 // Trending Creators Component
-function TrendingCreatorsTable() {
-  const mockCreators = [
-    {
-      rank: 1,
-      username: '@megacreator',
-      nickname: 'Mega Creator',
-      followers: 15200000,
-      likes: 892000000,
-      videos: 1245,
-      engagementRate: 12.5,
-      growth: 28.3,
-      verified: true,
-    },
-    // Add more mock data...
-  ];
+function TrendingCreatorsTable({ creators, loading }: { creators: any[], loading: boolean }) {
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-[#A855F7]" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!creators || creators.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <AlertCircle className="h-12 w-12 text-gray-500 mb-4" />
+          <p className="text-gray-400">No trending creators available</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -294,53 +365,48 @@ function TrendingCreatorsTable() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {mockCreators.map((creator) => (
-            <div
-              key={creator.rank}
-              className="flex items-center gap-4 rounded-lg border p-4 hover:bg-accent transition-colors"
-            >
-              <div className={`flex h-10 w-10 items-center justify-center rounded-full font-black text-white shadow-lg ${
-                creator.rank === 1 ? 'bg-gradient-to-br from-[#FFB800] to-[#F97316] shadow-[#FFB800]/40' :
-                'bg-gradient-to-br from-[#EC4899] to-[#DB2777] shadow-[#EC4899]/30'
-              }`}>
-                #{creator.rank}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{creator.username}</span>
-                  {creator.verified && (
-                    <Badge variant="secondary" className="text-xs">Verified</Badge>
-                  )}
+          {creators.map((creator, index) => {
+            const rank = index + 1;
+            return (
+              <div
+                key={creator.unique_id || index}
+                className="flex items-center gap-4 rounded-lg border p-4 hover:bg-accent transition-colors"
+              >
+                <div className={`flex h-10 w-10 items-center justify-center rounded-full font-black text-white shadow-lg ${
+                  rank === 1 ? 'bg-gradient-to-br from-[#FFB800] to-[#F97316] shadow-[#FFB800]/40' :
+                  'bg-gradient-to-br from-[#EC4899] to-[#DB2777] shadow-[#EC4899]/30'
+                }`}>
+                  #{rank}
                 </div>
-                <div className="text-sm text-muted-foreground">{creator.nickname}</div>
-                <div className="mt-2 flex items-center gap-4 text-sm">
-                  <span>{formatNumber(creator.followers)} followers</span>
-                  <span>{formatNumber(creator.likes)} likes</span>
-                  <span>{formatNumber(creator.videos)} videos</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">@{creator.unique_id || 'Unknown'}</span>
+                    {creator.verified && (
+                      <Badge variant="secondary" className="text-xs">Verified</Badge>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground">{creator.nickname || creator.unique_id}</div>
+                  <div className="mt-2 flex items-center gap-4 text-sm">
+                    <span>{formatNumber(creator.follower_count || 0)} followers</span>
+                    <span>{formatNumber(creator.heart_count || 0)} likes</span>
+                    <span>{formatNumber(creator.video_count || 0)} videos</span>
+                  </div>
                 </div>
+                <Button size="sm" className="bg-gradient-to-r from-[#A855F7] to-[#7C3AED] hover:from-[#7C3AED] hover:to-[#A855F7] font-bold shadow-md shadow-[#A855F7]/30">
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Profile
+                </Button>
               </div>
-              <div className="text-right">
-                <div className="text-sm font-medium">Engagement</div>
-                <div className="text-2xl font-bold text-primary">{creator.engagementRate}%</div>
-                <Badge variant="secondary" className="mt-1">
-                  <TrendingUp className="mr-1 h-3 w-3" />
-                  +{creator.growth}%
-                </Badge>
-              </div>
-              <Button size="sm">
-                <Eye className="mr-2 h-4 w-4" />
-                View Profile
-              </Button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
   );
 }
 
-// Placeholder components for other tabs
-function TrendingHashtagsTable() {
+// Placeholder components for other tabs with loading states
+function TrendingHashtagsTable({ hashtags, loading }: { hashtags: any[], loading: boolean }) {
   return (
     <Card>
       <CardHeader>
@@ -348,15 +414,37 @@ function TrendingHashtagsTable() {
         <CardDescription>Most used and fastest growing hashtags</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-center py-12 text-muted-foreground">
-          Hashtag data will be populated from TikTok RapidAPI
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-[#00D9FF]" />
+          </div>
+        ) : !hashtags || hashtags.length === 0 ? (
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 text-gray-500 mb-4 mx-auto" />
+            <p className="text-gray-400">No trending hashtags available</p>
+          </div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {hashtags.map((tag, index) => (
+              <div key={index} className="p-4 rounded-lg border hover:bg-accent transition-colors">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-lg font-bold text-[#00D9FF]">#{tag.challenge_name || tag.name}</span>
+                  <Badge className="bg-[#00D9FF]/20 text-[#00D9FF]">#{index + 1}</Badge>
+                </div>
+                <div className="flex gap-4 text-sm text-gray-400">
+                  <span>{formatNumber(tag.view_count || 0)} views</span>
+                  <span>{formatNumber(tag.post_count || 0)} posts</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function TrendingSongsTable() {
+function TrendingSongsTable({ songs, loading }: { songs: any[], loading: boolean }) {
   return (
     <Card>
       <CardHeader>
@@ -364,15 +452,40 @@ function TrendingSongsTable() {
         <CardDescription>Most popular songs used in videos</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-center py-12 text-muted-foreground">
-          Song data will be populated from TikTok RapidAPI
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-[#EC4899]" />
+          </div>
+        ) : !songs || songs.length === 0 ? (
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 text-gray-500 mb-4 mx-auto" />
+            <p className="text-gray-400">No trending songs available</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {songs.map((song, index) => (
+              <div key={index} className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent transition-colors">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#EC4899] to-[#DB2777] font-black text-white">
+                  #{index + 1}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">{song.title || song.name || 'Unknown Song'}</div>
+                  <div className="text-sm text-gray-400">{song.author || 'Unknown Artist'}</div>
+                </div>
+                <div className="text-right text-sm">
+                  <div className="font-bold">{formatNumber(song.video_count || 0)}</div>
+                  <div className="text-gray-400">videos</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function TrendingKeywordsTable() {
+function TrendingKeywordsTable({ keywords, loading }: { keywords: any[], loading: boolean }) {
   return (
     <Card>
       <CardHeader>
@@ -380,15 +493,34 @@ function TrendingKeywordsTable() {
         <CardDescription>Popular search terms and topics</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-center py-12 text-muted-foreground">
-          Keyword data will be populated from TikTok RapidAPI
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-[#FFB800]" />
+          </div>
+        ) : !keywords || keywords.length === 0 ? (
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 text-gray-500 mb-4 mx-auto" />
+            <p className="text-gray-400">No trending keywords available</p>
+          </div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-3">
+            {keywords.map((keyword, index) => (
+              <div key={index} className="p-4 rounded-lg border border-[#FFB800]/30 hover:bg-[#FFB800]/5 transition-colors">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-white">{keyword.keyword || keyword.name}</span>
+                  <Badge className="bg-[#FFB800]/20 text-[#FFB800]">#{index + 1}</Badge>
+                </div>
+                <div className="text-sm text-gray-400">{formatNumber(keyword.search_count || 0)} searches</div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function TrendingProductsTable() {
+function TrendingProductsTable({ products, loading }: { products: any[], loading: boolean }) {
   return (
     <Card>
       <CardHeader>
@@ -396,15 +528,42 @@ function TrendingProductsTable() {
         <CardDescription>Most promoted products on TikTok Shop</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-center py-12 text-muted-foreground">
-          Product data will be populated from TikTok RapidAPI
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-[#10B981]" />
+          </div>
+        ) : !products || products.length === 0 ? (
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 text-gray-500 mb-4 mx-auto" />
+            <p className="text-gray-400">No trending products available</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {products.map((product, index) => (
+              <div key={index} className="p-4 rounded-lg border hover:bg-accent transition-colors">
+                <div className="flex gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-[#10B981] to-[#059669] font-black text-white">
+                    #{index + 1}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium line-clamp-1">{product.title || product.name || 'Product'}</div>
+                    <div className="text-sm text-gray-400">{product.shop_name || 'TikTok Shop'}</div>
+                    <div className="flex gap-3 mt-2 text-sm">
+                      <span className="text-[#10B981]">${product.price || '0.00'}</span>
+                      <span className="text-gray-400">{formatNumber(product.sales || 0)} sold</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function TrendingAdsTable() {
+function TrendingAdsTable({ ads, loading }: { ads: any[], loading: boolean }) {
   return (
     <Card>
       <CardHeader>
@@ -412,9 +571,34 @@ function TrendingAdsTable() {
         <CardDescription>Top performing TikTok advertisements</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-center py-12 text-muted-foreground">
-          Ad data will be populated from TikTok RapidAPI
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-[#8B5CF6]" />
+          </div>
+        ) : !ads || ads.length === 0 ? (
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 text-gray-500 mb-4 mx-auto" />
+            <p className="text-gray-400">No trending ads available</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {ads.map((ad, index) => (
+              <div key={index} className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent transition-colors">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] font-black text-white">
+                  #{index + 1}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium line-clamp-1">{ad.caption || ad.desc || 'Ad Campaign'}</div>
+                  <div className="text-sm text-gray-400">Brand: {ad.brand_name || 'Unknown'}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-[#8B5CF6]">{ad.ctr || '0'}% CTR</div>
+                  <div className="text-sm text-gray-400">{formatNumber(ad.impressions || 0)} views</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

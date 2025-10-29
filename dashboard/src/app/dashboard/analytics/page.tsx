@@ -14,61 +14,38 @@ import {
   MessageCircle,
   Share2,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react';
+import { analyzeVideo, type AnalysisResult } from '@/lib/api';
 
 export default function AnalyticsPage() {
   const [tiktokUrl, setTiktokUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
     if (!tiktokUrl) return;
     
-    setIsAnalyzing(true);
+    // Validate TikTok URL
+    if (!tiktokUrl.includes('tiktok.com') || !tiktokUrl.includes('/video/')) {
+      setError('Please enter a valid TikTok video URL');
+      return;
+    }
     
-    // TODO: Call backend API
-    setTimeout(() => {
-      setAnalysisResult({
-        viralityScore: 87,
-        metadata: {
-          creator: '@testcreator',
-          description: 'This is a test video description',
-          views: '2.5M',
-          likes: '450K',
-          comments: '32K',
-          shares: '89K',
-          music: 'Trending Sound 2024',
-          hashtags: ['#viral', '#trending', '#foryou'],
-        },
-        frameAnalysis: [
-          {
-            frame: 'opening',
-            analysis: 'Strong hook with attention-grabbing text overlay...',
-          },
-          {
-            frame: 'middle',
-            analysis: 'Maintains engagement with quick cuts and dynamic content...',
-          },
-          {
-            frame: 'ending',
-            analysis: 'Creates loop potential with seamless transition...',
-          },
-        ],
-        recommendations: [
-          {
-            type: 'hook',
-            priority: 'high',
-            suggestion: 'Strengthen opening with bolder text overlay',
-          },
-          {
-            type: 'music',
-            priority: 'medium',
-            suggestion: 'Consider using a more trending audio',
-          },
-        ],
-      });
+    setIsAnalyzing(true);
+    setError(null);
+    setAnalysisResult(null);
+    
+    try {
+      const result = await analyzeVideo(tiktokUrl);
+      setAnalysisResult(result);
+    } catch (err: any) {
+      setError(err.message || 'Failed to analyze video. Please try again.');
+      console.error('Analysis error:', err);
+    } finally {
       setIsAnalyzing(false);
-    }, 3000);
+    }
   };
 
   return (
@@ -287,8 +264,23 @@ export default function AnalyticsPage() {
         </>
       )}
 
+          {/* Error State */}
+      {error && (
+        <Card className="border-2 border-red-500/30 bg-red-500/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-6 w-6 text-red-500" />
+              <div>
+                <h3 className="text-lg font-bold text-white mb-1">Analysis Error</h3>
+                <p className="text-red-400 font-medium">{error}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Empty State */}
-      {!analysisResult && !isAnalyzing && (
+      {!analysisResult && !isAnalyzing && !error && (
         <Card className="glass-effect border-white/10">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="relative mb-6">
@@ -299,6 +291,10 @@ export default function AnalyticsPage() {
             <p className="text-gray-400 text-center mb-6 font-medium max-w-md">
               Paste a TikTok URL above to get started with AI-powered analysis
             </p>
+            <div className="text-sm text-gray-500 mt-4">
+              <p className="font-bold mb-2">Example URL format:</p>
+              <code className="bg-white/5 px-3 py-1 rounded">https://www.tiktok.com/@username/video/1234567890</code>
+            </div>
           </CardContent>
         </Card>
       )}
